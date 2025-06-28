@@ -3,65 +3,86 @@ import os
 import json
 
 
-def load_config_to_globals(config_path):
-    """
-    Загружает данные из JSON-файла и создает глобальные переменные
-    с именами и значениями, указанными в конфигурации.
-
-    :param config_path: Путь к JSON-файлу с конфигурацией
-    """
-    # Открываем и читаем JSON-файл
-    with open(config_path, "r") as json_file:
-        config = json.load(json_file)
-
-    # Извлечение данных из конфигурации и объявление глобальных переменных
-    global EXPERIMENT_NAME, RUN_NAME, REGISTRY_MODEL_NAME, model_path, data_path, metrics_path, requirements_path
-
-    EXPERIMENT_NAME = config.get("experiment_name", "default_experiment")
-    RUN_NAME = config.get("run_name", "default_run")
-    REGISTRY_MODEL_NAME = config.get("registry_model_name", "default_model")
-    model_path = config.get("model_path")
-    data_path = config.get("data_path")
-    metrics_path = config.get("metrics_path")
-    requirements_path = config.get("requirements_path")
-    recsys_dir = config.get("recsys_path")
-
-
-
 def start_mlflow_server(config_path):
     """
     Функция для запуска MLflow сервера через bash-скрипт.
-    Выполняет переход в директорию recsys и запуск run_mlflow_server.sh.
+    Сервер запускается в фоновом режиме, чтобы не блокировать выполнение ячейки.
+    PID процесса сохраняется в файл для последующей остановки.
     """
+    # Чтение конфигурации
     with open(config_path, "r") as json_file:
         config = json.load(json_file)
-    recsys_dir = config.get("recsys_path")
+    mlfl_dir = config.get("mlflow_dir_path")
     
     try:
         # Переход в директорию recsys
-        # recsys_dir = os.path.join(os.getcwd(), "recsys")
-        os.chdir(recsys_dir)
-        print(f"Перешли в директорию: {recsys_dir}")
+        os.chdir(mlfl_dir)
+        print(f"Перешли в директорию: {mlfl_dir}")
 
-        # Запуск bash-скрипта
+        # Путь к скрипту
         script_path = "run_mlflow_server.sh"
-        print(f"Запуск скрипта: {script_path}")
-        result = subprocess.run(["sh", script_path], check=True, text=True, capture_output=True)
+        if not os.path.isfile(script_path):
+            raise FileNotFoundError(f"Файл {script_path} не найден в директории {mlfl_dir}")
 
-        # Вывод результата выполнения
-        print("Сервер успешно запущен!")
-        print("STDOUT:", result.stdout)
-        print("STDERR:", result.stderr)
+        # Запуск скрипта в фоновом режиме
+        process = subprocess.Popen(["sh", script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(f"Сервер запущен в фоновом режиме. PID: {process.pid}")
 
-    except FileNotFoundError:
-        print("Ошибка: Директория recsys или файл run_mlflow_server.sh не найдены.")
-    except subprocess.CalledProcessError as e:
-        print(f"Ошибка при выполнении скрипта: {e}")
-        print("STDOUT:", e.stdout)
-        print("STDERR:", e.stderr)
+        # Сохранение PID в файл для последующей остановки
+        pid_file = os.path.join(mlfl_dir, "mlflow_server.pid")
+        with open(pid_file, "w") as f:
+            f.write(str(process.pid))
+        print(f"PID сервера сохранен в файл: {pid_file}")
+
+    except FileNotFoundError as e:
+        print(f"Ошибка: {e}")
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
+        
+    
+def stop_mlflow_server(config_path):
+    """
+    Функция для остановки MLflow сервера.
+    Использует PID, сохраненный при запуске сервера.
+    """
+    # Чтение конфигурации
+    with open(config_path, "r") as json_file:
+        config = json.load(json_file)
+    mlfl_dir = config.get("mlflow_dir_path")
+    
+    try:
+        # Путь к файлу с PID
+        pid_file = os.path.join(mlfl_dir, "mlflow_server.pid")
+        if not os.path.isfile(pid_file):
+            raise FileNotFoundError(f"Файл с PID ({pid_file}) не найден.")
+
+        # Чтение PID из файла
+        with open(pid_file, "r") as f:
+            pid = int(f.read().strip())
+        print(f"Найден PID сервера: {pid}")
+
+        # Попытка завершить процесс
+        try:
+            os.kill(pid, 9)  # SIGKILL для принудительного завершения
+            print(f"Сервер с PID {pid} успешно остановлен.")
+        except ProcessLookupError:
+            print(f"Процесс с PID {pid} уже завершен или не существует.")
+
+        # Удаление файла с PID
+        os.remove(pid_file)
+        print(f"Файл с PID удален: {pid_file}")
+
+    except FileNotFoundError as e:
+        print(f"Ошибка: {e}")
     except Exception as e:
         print(f"Произошла ошибка: {e}")
 
-# Пример использования
-if __name__ == "__main__":
-    start_mlflow_server()
+
+
+def load_config(config_path):
+ 
+    with open(config_path, "r") as json_file:
+        config = json.load(json_file)
+
+    return config
+
