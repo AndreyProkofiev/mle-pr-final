@@ -1,0 +1,1 @@
+uvicorn recommendations_service:app --reload
