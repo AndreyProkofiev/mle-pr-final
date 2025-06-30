@@ -1,9 +1,0 @@
-{
-        "experiment_name": "mle_pr_final",
-        "run_name": "baseline_model_logging",
-        "registry_model_name": "baseline_model",
-        "model_path": "/home/mle-user/mle_projects/mle-project-sprint-1-v001/part2_dvc/models/fitted_model.pkl",
-        "data_path": "/home/mle-user/mle_projects/mle-project-sprint-1-v001/part2_dvc/data/initial_data.csv",
-        "metrics_path": "/home/mle-user/mle_projects/mle-project-sprint-1-v001/part2_dvc/cv_results/cv_res.json",
-        "requirements_path": "/home/mle-user/mle_projects/mle-dvc/requirements.txt"
-    }
