@@ -7,6 +7,25 @@ from lightfm.evaluation import precision_at_k
 from lightfm.data import Dataset
 from lightfm.evaluation import precision_at_k
 
+def prepare_data(df):
+    """
+    Подготавливает данные для обучения модели LightFM.
+    Создает user-item взаимодействия и веса на основе рейтингов.
+    """
+    dataset = Dataset()
+    dataset.fit(df['visitorid'], df['itemid'])
+    
+    # Создаем матрицу взаимодействий с весами (рейтингами)
+    (interactions, weights) = dataset.build_interactions(
+        [(row['visitorid'], row['itemid'], row['rating']) for _, row in df.iterrows()]
+    )
+    
+    # Получаем маппинг пользователей и айтемов
+    user_id_map = dataset.mapping()[0]
+    item_id_map = dataset.mapping()[2]
+    
+    return interactions, weights, user_id_map, item_id_map
+
 
 def prepare_data_with_split(df, test_size=0.2):
     dataset = Dataset()
@@ -106,3 +125,118 @@ def calculate_precision_at_k(model, train_interactions, test_interactions, k=10,
     
     return precision
 
+
+def recommend_items(model, user_id, user_id_map, item_id_map, interactions, top_n=10):
+    """
+    Делает рекомендации для конкретного пользователя.
+    """
+    if user_id not in user_id_map:
+        raise ValueError(f"User ID {user_id} not found in the dataset.")
+    
+    user_idx = user_id_map[user_id]
+    scores = model.predict(user_idx, np.arange(len(item_id_map)))
+    
+    # Исключаем уже взаимодействовавшие айтемы
+    known_items = interactions.tocsr()[user_idx].indices
+    scores[known_items] = -np.inf
+    
+    # Выбираем топ-N айтемов
+    top_items = np.argsort(-scores)[:top_n]
+    top_item_ids = [list(item_id_map.keys())[list(item_id_map.values()).index(i)] for i in top_items]
+    
+    return top_item_ids
+
+
+def get_user_embeddings(model, user_id_map):
+    """
+    Возвращает эмбеддинги всех пользователей.
+    """
+    user_embeddings = model.user_embeddings
+    user_ids = list(user_id_map.keys())
+    user_embeddings_dict = {user_id: user_embeddings[user_id_map[user_id]] for user_id in user_ids}
+    return user_embeddings_dict
+
+
+def recommend_items_score(model, user_id, user_id_map, item_id_map, interactions, top_n=10):
+    """
+    Делает рекомендации для конкретного пользователя и возвращает их в виде датафрейма.
+    
+    Возвращает:
+        pd.DataFrame: DataFrame с двумя колонками: 'itemid' (ID айтема) и 'score' (скор).
+    """
+    if user_id not in user_id_map:
+        raise ValueError(f"User ID {user_id} not found in the dataset.")
+    
+    user_idx = user_id_map[user_id]
+    scores = model.predict(user_idx, np.arange(len(item_id_map)))
+    
+    # Исключаем уже взаимодействовавшие айтемы
+    known_items = interactions.tocsr()[user_idx].indices
+    scores[known_items] = -np.inf
+    
+    # Выбираем топ-N айтемов и их скоры
+    top_indices = np.argsort(-scores)[:top_n]
+    top_scores = scores[top_indices]
+    top_item_ids = [list(item_id_map.keys())[list(item_id_map.values()).index(i)] for i in top_indices]
+    
+    # Создаем DataFrame
+    recommendations_df = pd.DataFrame({
+        'itemid': top_item_ids,
+        'score': top_scores
+    })
+    
+    return recommendations_df
+
+
+def predict_for_new_user(model, dataset, new_user_features, item_id_map, top_n=10):
+    """
+    Делает рекомендации для нового пользователя на основе его признаков.
+    """
+    # Создаем разреженную матрицу признаков для нового пользователя
+    (new_user_features_matrix, _) = dataset.build_user_features([new_user_features])
+    
+    # Предсказываем оценки для всех айтемов
+    scores = model.predict(0, np.arange(len(item_id_map)), user_features=new_user_features_matrix)
+    
+    # Выбираем топ-N айтемов
+    top_items = np.argsort(-scores)[:top_n]
+    top_item_ids = [list(item_id_map.keys())[list(item_id_map.values()).index(i)] for i in top_items]
+    
+    return top_item_ids
+
+def recommend_for_cold_user(model, dataset, user_features, item_id_map, top_n=10):
+    """
+    Делает рекомендации для нового (холодного) пользователя на основе его признаков.
+    
+    Параметры:
+        model: Обученная модель LightFM.
+        dataset: Экземпляр Dataset, используемый для подготовки данных.
+        user_features: Список или словарь признаков нового пользователя.
+        item_id_map: Словарь маппинга ID айтемов.
+        top_n: Количество рекомендаций для выдачи.
+    
+    Возвращает:
+        pd.DataFrame: DataFrame с двумя колонками: 'itemid' (ID айтема) и 'score' (скор).
+    """
+    # Преобразуем признаки пользователя в формат, подходящий для LightFM
+    if isinstance(user_features, dict):
+        user_features = [(key, value) for key, value in user_features.items()]
+    
+    # Создаем разреженную матрицу признаков для нового пользователя
+    (user_features_matrix, _) = dataset.build_user_features([user_features])
+    
+    # Предсказываем оценки для всех айтемов
+    scores = model.predict(0, np.arange(len(item_id_map)), user_features=user_features_matrix)
+    
+    # Выбираем топ-N айтемов и их скоры
+    top_indices = np.argsort(-scores)[:top_n]
+    top_scores = scores[top_indices]
+    top_item_ids = [list(item_id_map.keys())[list(item_id_map.values()).index(i)] for i in top_indices]
+    
+    # Создаем DataFrame
+    recommendations_df = pd.DataFrame({
+        'itemid': top_item_ids,
+        'score': top_scores
+    })
+    
+    return recommendations_df
