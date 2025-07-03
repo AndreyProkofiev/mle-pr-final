@@ -1,11 +1,14 @@
 import os
 import sys
 import pandas as pd
+import pickle
 from lightfm import LightFM
+from itertools import product
 from lightfm.data import Dataset
 from lightfm.evaluation import precision_at_k
 from lightfm.data import Dataset
 from lightfm.evaluation import precision_at_k
+
 
 def prepare_data(df):
     """
@@ -99,6 +102,77 @@ def train_model(interactions, weights=None, epochs=30, num_threads=4, model_para
     )
     
     return model
+
+
+
+
+def evaluate_model(interactions, params, k=5):
+    """
+    Обучает модель LightFM и оценивает её качество с помощью precision@k.
+    
+    Параметры:
+        interactions: Матрица взаимодействий.
+        params: Словарь параметров модели.
+        k: Количество рекомендаций для оценки метрики precision@k.
+    
+    Возвращает:
+        float: Значение precision@k.
+    """
+    # Разделение данных на обучающую и тестовую выборки
+    train_interactions = interactions
+    test_interactions = interactions  # Для простоты используем одну и ту же матрицу
+    
+    # Обучение модели
+    model = LightFM(**params)
+    model.fit(train_interactions, epochs=params.get('epochs', 30), num_threads=4)
+    
+    # Оценка модели
+    precision = precision_at_k(
+        model=model,
+        test_interactions=test_interactions,
+        train_interactions=train_interactions,
+        k=k,
+        num_threads=4
+    ).mean()
+    
+    return precision
+
+
+def grid_search_hyperparameters(interactions, param_grid, k=5):
+    """
+    Выполняет подбор гиперпараметров с помощью Grid Search.
+    
+    Параметры:
+        interactions: Матрица взаимодействий.
+        param_grid: Словарь с сеткой гиперпараметров.
+        k: Количество рекомендаций для оценки метрики precision@k.
+    
+    Возвращает:
+        dict: Лучшие параметры и соответствующее значение precision@k.
+    """
+    best_params = None
+    best_score = -1
+    
+    # Перебор всех комбинаций гиперпараметров
+    keys, values = zip(*param_grid.items())
+    for params_values in product(*values):
+        params = dict(zip(keys, params_values))
+        print(f"Тестируем параметры: {params}")
+        
+        # Оценка модели
+        score = evaluate_model(interactions, params, k)
+        print(f"Precision@{k}: {score:.4f}")
+        
+        # Сохранение лучших параметров
+        if score > best_score:
+            best_score = score
+            best_params = params
+    
+    print(f"\nЛучшие параметры: {best_params}")
+    print(f"Лучший precision@{k}: {best_score:.4f}")
+    
+    return best_params, best_score
+
 
 def calculate_precision_at_k(model, train_interactions, test_interactions, k=10, num_threads=4):
     """
@@ -240,3 +314,36 @@ def recommend_for_cold_user(model, dataset, user_features, item_id_map, top_n=10
     })
     
     return recommendations_df
+
+
+
+def save_model(model, filepath):
+    """
+    Сохраняет обученную модель LightFM на диск.
+    
+    Параметры:
+        model: Обученная модель LightFM.
+        filepath: Путь к файлу, куда будет сохранена модель.
+    """
+    with open(filepath, 'wb') as file:
+        pickle.dump(model, file)
+    return print(f"Модель успешно сохранена в файл: {filepath}")
+
+
+
+def load_model(filepath):
+    """
+    Загружает обученную модель LightFM с диска.
+    
+    Параметры:
+        filepath: Путь к файлу, откуда будет загружена модель.
+    
+    Возвращает:
+        model: Загруженная модель LightFM.
+    """
+    with open(filepath, 'rb') as file:
+        model = pickle.load(file)
+    print(f"Модель успешно загружена из файла: {filepath}")
+    return model
+
+
