@@ -106,7 +106,7 @@ def train_model(interactions, weights=None, epochs=30, num_threads=4, model_para
 
 
 
-def evaluate_model(interactions, params, k=5):
+def evaluate_model(train_interactions, test_interactions, params, k=5):
     """
     Обучает модель LightFM и оценивает её качество с помощью precision@k.
     
@@ -119,11 +119,11 @@ def evaluate_model(interactions, params, k=5):
         float: Значение precision@k.
     """
     # Разделение данных на обучающую и тестовую выборки
-    train_interactions = interactions
-    test_interactions = interactions  # Для простоты используем одну и ту же матрицу
+    # train_interactions, test_interactions, dataset = prepare_data_with_split(train_df)
     
     # Обучение модели
-    model = LightFM(**params)
+    model_params = {k:v for k,v in params.items() if k not in 'epochs'}
+    model = LightFM(**model_params)
     model.fit(train_interactions, epochs=params.get('epochs', 30), num_threads=4)
     
     # Оценка модели
@@ -138,7 +138,47 @@ def evaluate_model(interactions, params, k=5):
     return precision
 
 
-def grid_search_hyperparameters(interactions, param_grid, k=5):
+
+
+
+# def grid_search_hyperparameters(interactions, param_grid, k=5):
+#     """
+#     Выполняет подбор гиперпараметров с помощью Grid Search.
+    
+#     Параметры:
+#         interactions: Матрица взаимодействий.
+#         param_grid: Словарь с сеткой гиперпараметров.
+#         k: Количество рекомендаций для оценки метрики precision@k.
+    
+#     Возвращает:
+#         dict: Лучшие параметры и соответствующее значение precision@k.
+#     """
+#     best_params = None
+#     best_score = -1
+    
+#     # Перебор всех комбинаций гиперпараметров
+#     keys, values = zip(*param_grid.items())
+#     for params_values in product(*values):
+#         params = dict(zip(keys, params_values))
+#         print(f"Тестируем параметры: {params}")
+        
+#         # Оценка модели
+#         score = evaluate_model(interactions, params, k)
+#         print(f"Precision@{k}: {score:.4f}")
+        
+#         # Сохранение лучших параметров
+#         if score > best_score:
+#             best_score = score
+#             best_params = params
+    
+#     print(f"\nЛучшие параметры: {best_params}")
+#     print(f"Лучший precision@{k}: {best_score:.4f}")
+    
+#     return best_params, best_score
+
+from itertools import product
+
+def grid_search_hyperparameters(train_df, param_grid, k=5):
     """
     Выполняет подбор гиперпараметров с помощью Grid Search.
     
@@ -154,13 +194,14 @@ def grid_search_hyperparameters(interactions, param_grid, k=5):
     best_score = -1
     
     # Перебор всех комбинаций гиперпараметров
+    train_interactions, test_interactions, dataset = prepare_data_with_split(train_df)
     keys, values = zip(*param_grid.items())
     for params_values in product(*values):
         params = dict(zip(keys, params_values))
         print(f"Тестируем параметры: {params}")
         
         # Оценка модели
-        score = evaluate_model(interactions, params, k)
+        score = evaluate_model(train_interactions, test_interactions, params, k)
         print(f"Precision@{k}: {score:.4f}")
         
         # Сохранение лучших параметров

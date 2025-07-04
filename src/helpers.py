@@ -2,6 +2,7 @@ import subprocess
 import os
 import sys
 import json
+import numpy as np
 import pandas as pd
 import mlflow
 import pickle
@@ -131,5 +132,21 @@ def log_lightfm_model_to_mlflow(model_filepath, model_params, train_interactions
         
         # 4. Логгирование модели как артефакта
         mlflow.log_artifact(model_filepath, artifact_path="model")
+
+
+def mk_model_data(conf_path: str):
+    config = load_config(conf_path)
+    raw_data_path = config['raw_data_path']
+    event_df  = pd.read_csv(os.path.join(raw_data_path, 'events.csv'))
+    model_df = event_df[event_df['event'] != 'transaction'].copy()
+    model_df['rating'] = np.where(model_df['event'] == 'addtocart', 5,1)
+    filter_users = event_df.groupby('visitorid', as_index=0)['itemid'].nunique()
+    train_users = filter_users[(filter_users['itemid']>10)].visitorid.unique()
+    cond_tr = (model_df['visitorid'].isin(train_users))
+    train_df = model_df[cond_tr][['visitorid', 'itemid', 'rating']]
+    train_df = train_df.groupby(['visitorid','itemid'], as_index=0).rating.max()
+    ##To DO del dataframes
+    return train_df
+
         
        
