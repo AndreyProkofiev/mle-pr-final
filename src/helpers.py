@@ -96,7 +96,13 @@ def load_config(config_path):
     return config
 
 
-def log_lightfm_model_to_mlflow(model_filepath, model_params, train_interactions, test_interactions, k=5):
+def log_lightfm_model_to_mlflow(model_filepath, 
+                                model_params, 
+                                train_interactions, 
+                                test_interactions, 
+                                k,
+                                RUN_NAME, 
+                                experiment_id):
     """
     Логгирует модель LightFM в MLflow.
     
@@ -109,7 +115,7 @@ def log_lightfm_model_to_mlflow(model_filepath, model_params, train_interactions
     """
     model = load_model(model_filepath)
     # Начинаем эксперимент MLflow
-    with mlflow.start_run():
+    with mlflow.start_run(run_name=RUN_NAME, experiment_id=experiment_id):
         # 1. Логгирование параметров модели
         mlflow.log_params(model_params)
         
@@ -126,7 +132,6 @@ def log_lightfm_model_to_mlflow(model_filepath, model_params, train_interactions
         mlflow.log_metric("precision_at_k", precision)
         
         # 3. Сохранение модели в файл
-        model_filepath = "lightfm_model.pkl"
         with open(model_filepath, 'wb') as file:
             pickle.dump(model, file)
         
