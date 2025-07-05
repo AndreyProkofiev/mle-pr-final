@@ -176,7 +176,7 @@ def evaluate_model(train_interactions, test_interactions, params, k=5):
     
 #     return best_params, best_score
 
-from itertools import product
+
 
 def grid_search_hyperparameters(train_df, param_grid, k=5):
     """
@@ -190,6 +190,7 @@ def grid_search_hyperparameters(train_df, param_grid, k=5):
     Возвращает:
         dict: Лучшие параметры и соответствующее значение precision@k.
     """
+    grid_search_m3x = []
     best_params = None
     best_score = -1
     
@@ -198,11 +199,15 @@ def grid_search_hyperparameters(train_df, param_grid, k=5):
     keys, values = zip(*param_grid.items())
     for params_values in product(*values):
         params = dict(zip(keys, params_values))
-        print(f"Тестируем параметры: {params}")
+        params_df = pd.DataFrame([params])
+        # print(f"Тестируем параметры: {params}")
         
         # Оценка модели
         score = evaluate_model(train_interactions, test_interactions, params, k)
-        print(f"Precision@{k}: {score:.4f}")
+        params_df[f'Precision@{k}'] = score
+        # print(f"Precision@{k}: {score:.4f}")
+        grid_search_m3x.append(params_df)
+        print(params_df)
         
         # Сохранение лучших параметров
         if score > best_score:
@@ -211,8 +216,10 @@ def grid_search_hyperparameters(train_df, param_grid, k=5):
     
     print(f"\nЛучшие параметры: {best_params}")
     print(f"Лучший precision@{k}: {best_score:.4f}")
+    log_search = pd.concat(grid_search_m3x,ignore_index=True) 
+
     
-    return best_params, best_score
+    return best_params, best_score, log_search 
 
 
 def calculate_precision_at_k(model, train_interactions, test_interactions, k=10, num_threads=4):
