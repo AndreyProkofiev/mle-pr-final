@@ -27,7 +27,7 @@ def prepare_data(df):
     user_id_map = dataset.mapping()[0]
     item_id_map = dataset.mapping()[2]
     
-    return interactions, weights, user_id_map, item_id_map
+    return interactions, weights, user_id_map, item_id_map, dataset
 
 
 def prepare_data_with_split(df, test_size=0.2):
