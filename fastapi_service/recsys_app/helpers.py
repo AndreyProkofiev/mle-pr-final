@@ -4,12 +4,12 @@ import sys
 import json
 import numpy as np
 import pandas as pd
-import mlflow
+# import mlflow
 import pickle
 from lightfm import LightFM
 from lightfm.evaluation import precision_at_k
-sys.path.append('/home/mle-user/mle_projects/mle-pr-final/')
-from src.recsys import prepare_data_with_split, train_model, calculate_precision_at_k, load_model
+# sys.path.append('/home/mle-user/mle_projects/mle-pr-final/')
+from recsys import prepare_data_with_split, train_model, calculate_precision_at_k, load_model
 
 
 def start_mlflow_server(config_path):
