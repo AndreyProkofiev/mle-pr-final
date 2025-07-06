@@ -170,7 +170,7 @@ sh run_mlflow_server.sh
 from src.helpers import start_mlflow_server, stop_mlflow_server
 ```
 
-После запуска перейдите по ссылке  http://<your host ip address>:5000  и откройте веб-интерфейс MLflow. Выберите эксперимент `mle_pr_final`, где зафиксированы результаты EDA и несколько вариантов обученных LightFM моделей, а так же метрики и график подобра гиперпараметров.
+После запуска перейдите по ссылке  http://`your host ip address`:5000  и откройте веб-интерфейс MLflow. Выберите эксперимент `mle_pr_final`, где зафиксированы результаты EDA и несколько вариантов обученных LightFM моделей, а так же метрики и график подобра гиперпараметров.
 
 ---
 
@@ -183,7 +183,7 @@ cd airflow_ml_pipeline/
 docker compose up --build
 ```
 
-Когда процесс поднятия будет завершен, вы сможете перейти по ссылке  http://<your host ip address>:8080  и открыть веб-интерфейс Airflow. На входе потребуются логин и пароль:
+Когда процесс поднятия будет завершен, вы сможете перейти по ссылке  http://`your host ip address`:8080  и открыть веб-интерфейс Airflow. На входе потребуются логин и пароль:
 
 - **Логин**: `airflow`
 - **Пароль**: `airflow`
@@ -194,10 +194,10 @@ docker compose up --build
 /airflow_ml_pipeline/dags
 ```
 
-`train_lightfm_model.py` - это pipline обучения модели в виде airflow DAG.
+`train_lightfm_model.py` - это pipeline обучения модели в виде airflow DAG.
 состоит из следующих шагов:
 - extract загружает данные из таблиц в БД.
-- mk_model_data формирует датасет для обучения модели
+- mk_model_data формирует датасет для обучения модели.
 - train_model обучает модель с подбором гиперпараметров и лучшую модель сохраняет на диск.
 
 ---
