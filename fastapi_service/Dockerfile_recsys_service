@@ -1,0 +1,12 @@
+FROM python:3.10-slim
+
+COPY . /recsys_app
+
+WORKDIR /recsys_app
+
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+EXPOSE ${MAIN_APP_PORT}
+
+CMD uvicorn ml_service.app:app --port ${MAIN_APP_PORT} --host 0.0.0.0
+
