@@ -170,7 +170,7 @@ sh run_mlflow_server.sh
 from src.helpers import start_mlflow_server, stop_mlflow_server
 ```
 
-После запуска перейдите по ссылке [http://<your host ip address>:5000](http://<your host ip address>:5000) и откройте веб-интерфейс MLflow. Выберите эксперимент `mle_pr_final`, где зафиксированы результаты EDA и несколько вариантов обученных LightFM моделей.
+После запуска перейдите по ссылке  http://<your host ip address>:5000  и откройте веб-интерфейс MLflow. Выберите эксперимент `mle_pr_final`, где зафиксированы результаты EDA и несколько вариантов обученных LightFM моделей, а так же метрики и график подобра гиперпараметров.
 
 ---
 
@@ -183,7 +183,7 @@ cd airflow_ml_pipeline/
 docker compose up --build
 ```
 
-Когда процесс поднятия будет завершен, вы сможете перейти по ссылке [http://<your host ip address>:8080](http://<your host ip address>:8080) и открыть веб-интерфейс Airflow. На входе потребуются логин и пароль:
+Когда процесс поднятия будет завершен, вы сможете перейти по ссылке  http://<your host ip address>:8080  и открыть веб-интерфейс Airflow. На входе потребуются логин и пароль:
 
 - **Логин**: `airflow`
 - **Пароль**: `airflow`
@@ -195,7 +195,7 @@ docker compose up --build
 - В файле `eda_summary.md` описаны результаты проведенного разведочного анализа данных.
 - В файле `Monitoring.md` — информация по мониторингу.
 - В файле `test_service.log` — результаты тестирования FastAPI приложения.
-
+- В `notebooks/eda.ipynb` - jupyter notebbok с выполнением EDA, обучениейм моделей, логгированием в MLflow. 
 ---
 
 
