@@ -1,0 +1,11 @@
+{
+        "experiment_name": "mle_pr_final",
+        "run_name": "baseline_model_logging",
+        "registry_model_name": "finproj_lightFM",
+        "requirements_path": "/home/mle-user/mle_projects/mle-dvc/requirements.txt",
+        "mlflow_dir_path": "/home/mle-user/mle_projects/mle-pr-final/infrastructure",
+        "art_path": "/home/mle-user/mle_projects/mle-pr-final/data/artifacts/",
+        "env_path": "/home/mle-user/mle_projects/mle-pr-final/infrastructure/.env",
+        "model_path": "/home/mle-user/mle_projects/mle-pr-final/data/models",
+        "raw_data_path": "/home/mle-user/mle_projects/mle-pr-final/data/raw"
+    }
