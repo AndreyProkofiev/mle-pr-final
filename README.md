@@ -188,6 +188,18 @@ docker compose up --build
 - **Логин**: `airflow`
 - **Пароль**: `airflow`
 
+### Airflow pipeline
+***в терминале перейдите***
+```bash
+/airflow_ml_pipeline/dags
+```
+
+`train_lightfm_model.py` - это pipline обучения модели в виде airflow DAG.
+состоит из следующих шагов:
+- extract загружает данные из таблиц в БД.
+- mk_model_data формирует датасет для обучения модели
+- train_model обучает модель с подбором гиперпараметров и лучшую модель сохраняет на диск.
+
 ---
 
 ### Дополнительно

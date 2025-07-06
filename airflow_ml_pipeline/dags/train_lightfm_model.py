@@ -15,7 +15,6 @@ def run_ml_pipeline():
     import pandas as pd
     import numpy as np
     from airflow.providers.postgres.hooks.postgres import PostgresHook
-    from sqlalchemy import MetaData, Table, Column, String, Integer, Float, DateTime, UniqueConstraint,inspect
 
     @task()
    
